@@ -27,16 +27,21 @@ const client = new MongoClient(uri, {
 //verify jwt
 const verifyJWT = (req, res, next) =>{
   const authorization = req.headers.authorization;
+
+  console.log(req.headers.authorization)
   if(!authorization){
-    return res.status(401).send({error: true, message: 'unauthorized access'})
+    return res.status(405).send({error: true, message: 'unauthorized access'})
   }
-  //bearer token 
-  const token = authorization.split(' ')[1];
-  jwt.verify(token, process.env.SECRET_TOKEN, (error, decoded) =>{
-    if(error){
+  // const token = authorization.split(' ')[1];
+  jwt.verify(authorization, process.env.SECRET_TOKEN, (error, decoded) =>{
+    if(error)
+    {
+      // console.log(error)
       return res.status(401).send({error: true, message: 'unauthorized access'})
     }
+    // console.log('decoded', decoded)
     req.decoded = decoded;
+    // console.log(req.decoded)
     next();
   })
 }
@@ -78,12 +83,12 @@ async function run() {
       res.send(result);
     });
 
-    app.post("/users",verifyJWT, async (req, res) => {
+    app.post("/users", async (req, res) => {
       const user = req.body;
       console.log(user);
       const query = { email: user.email };
       const existingUser = await usersCollection.findOne(query);
-      console.log("existing user", existingUser);
+      // console.log("user already exist", existingUser);
       if (existingUser) {
         return res.send({ message: "already exist" });
       }
@@ -91,25 +96,26 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/users/admin/:email', verifyJWT, async (req, res) => {
+    app.get('/users/admin/:email', async (req, res) => {
       const email = req.params.email;
+      console.log(email)
 
-      if (req.decoded.email !== email) {
-        res.send({ admin: false })
-      }
+      // if (req.decoded.email !== email) {
+      //   console.log('decoded email',req.decoded.email)
+      //   return res.send({ admin: false })
+      // }
 
       const query = { email: email }
       const user = await usersCollection.findOne(query);
       const result = { admin: user?.role === 'admin' }
       res.send(result);
     })
-    app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+    app.get('/users/instructor/:email', async (req, res) => {
       const email = req.params.email;
 
-      if (req.decoded.email !== email) {
-        res.send({ instructor: false })
-      }
-
+      // if (req.decoded.email !== email) {
+      //   return res.send({ instructor: false })
+      // }
       const query = { email: email }
       const user = await usersCollection.findOne(query);
       const result = { instructor: user?.role === 'instructor' }
