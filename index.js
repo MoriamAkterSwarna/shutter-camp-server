@@ -148,6 +148,19 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+    //make instructor
+    app.patch("/users/student/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          role: "student"
+        },
+      };
+      const result = await usersCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
 
     //classes related api
     app.get('/classes', async (req, res) => {
@@ -162,7 +175,7 @@ async function run() {
       res.send(result);
     })
      //make approve
-     app.patch("/classes/approve/:id", async (req, res) => {
+     app.patch("/classes/:id", async (req, res) => {
       const id = req.params.id;
       console.log(id);
       const filter = { _id: new ObjectId(id) };
