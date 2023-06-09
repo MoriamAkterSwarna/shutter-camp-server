@@ -191,21 +191,18 @@ async function run() {
 
     // selected Class apis
   
-    app.get('/selected', verifyJWT, async (req, res) => {
-      const email = req.query.email;
+    app.get('/selected',verifyJWT,  async (req, res) => {
+      const email = req.query?.email;
 
-      if (!email) {
-        res.send([]);
+      console.log('student',email)
+      let query = { }
+      if(email){
+        query={studentEmail : email}
+        console.log(query)
       }
-
-      const decodedEmail = req.decoded.email;
-      if (email !== decodedEmail) {
-        return res.status(403).send({ error: true, message: 'forbidden access' })
-      }
-
-      const query = { email: email };
       const result = await selectedClassesCollection.find(query).toArray();
       res.send(result);
+      
     });
     app.post('/selected', async (req, res) => {
       const item = req.body;
