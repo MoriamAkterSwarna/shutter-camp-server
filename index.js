@@ -76,7 +76,7 @@ async function run() {
     }
 
     //Users  
-    app.get("/users",verifyJWT,  async (req, res) => {
+    app.get("/users", async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
@@ -94,7 +94,7 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/users/admin/:email',verifyJWT,verifyAdmin, async (req, res) => {
+    app.get('/users/admin/:email',verifyJWT, async (req, res) => {
       const email = req.params.email;
       console.log('admin',email)
 
@@ -117,6 +117,7 @@ async function run() {
       const query = { email: email }
       const user = await usersCollection.findOne(query);
       const result = { instructor: user?.role === 'instructor' }
+      console.log(result)
       res.send(result);
     })
 
@@ -160,6 +161,19 @@ async function run() {
       const result = await classesCollection.insertOne(newClass)
       res.send(result);
     })
+     //make approve
+     app.patch("/classes/approve/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "approve"
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
 
 
     // Send a ping to confirm a successful connection
