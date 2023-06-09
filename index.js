@@ -24,27 +24,24 @@ const client = new MongoClient(uri, {
 });
 
 
-//verify jwt
-const verifyJWT = (req, res, next) =>{
-  const authorization = req.headers.authorization;
 
-  console.log(req.headers.authorization)
+const verifyJWT=(req,res,next)=>{
+  const authorization=req.headers.authorization;
+  console.log('autho', authorization)
   if(!authorization){
-    return res.status(405).send({error: true, message: 'unauthorized access'})
+    return res.status(401).send({error:true,message:'unauthorized access'})
   }
-  // const token = authorization.split(' ')[1];
-  jwt.verify(authorization, process.env.SECRET_TOKEN, (error, decoded) =>{
-    if(error)
-    {
-      // console.log(error)
-      return res.status(401).send({error: true, message: 'unauthorized access'})
+  const token=authorization.split(' ')[1];
+  jwt.verify(token,process.env.SECRET_TOKEN,(err,decoded)=>{
+    if(err){
+      return res.status(401).send({error:true, message:'unauthorized access'})
+
     }
-    // console.log('decoded', decoded)
-    req.decoded = decoded;
-    // console.log(req.decoded)
+    req.decoded=decoded;
+    console.log(req.decoded);
     next();
   })
-}
+ }
 
 async function run() {
   try {
@@ -52,6 +49,7 @@ async function run() {
     await client.connect();
 
     const usersCollection = client.db("shutterCamp").collection("users");
+    const classesCollection= client.db("shutterCamp").collection("classes");
 
 
   
@@ -78,14 +76,14 @@ async function run() {
     }
 
     //Users  
-    app.get("/users", async (req, res) => {
+    app.get("/users",verifyJWT,  async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
 
     app.post("/users", async (req, res) => {
       const user = req.body;
-      console.log(user);
+      // console.log(user);
       const query = { email: user.email };
       const existingUser = await usersCollection.findOne(query);
       // console.log("user already exist", existingUser);
@@ -96,26 +94,26 @@ async function run() {
       res.send(result);
     });
 
-    app.get('/users/admin/:email', async (req, res) => {
+    app.get('/users/admin/:email',verifyJWT,verifyAdmin, async (req, res) => {
       const email = req.params.email;
-      console.log(email)
+      console.log('admin',email)
 
-      // if (req.decoded.email !== email) {
-      //   console.log('decoded email',req.decoded.email)
-      //   return res.send({ admin: false })
-      // }
+      if (req.decoded.email !== email) {
+        console.log('decoded email',req.decoded.email)
+        return res.send({ admin: false })
+      }
 
       const query = { email: email }
       const user = await usersCollection.findOne(query);
       const result = { admin: user?.role === 'admin' }
       res.send(result);
     })
-    app.get('/users/instructor/:email', async (req, res) => {
+    app.get('/users/instructor/:email',verifyJWT, async (req, res) => {
       const email = req.params.email;
-
-      // if (req.decoded.email !== email) {
-      //   return res.send({ instructor: false })
-      // }
+      console.log('instructor',email)
+      if (req.decoded.email !== email) {
+        return res.send({ instructor: false })
+      }
       const query = { email: email }
       const user = await usersCollection.findOne(query);
       const result = { instructor: user?.role === 'instructor' }
@@ -149,6 +147,19 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
+
+    //classes related api
+    app.get('/classes', async (req, res) => {
+      const result = await classesCollection.find().toArray();
+      res.send(result);
+    })
+
+    app.post('/classes', async (req, res) => {
+      const newClass = req.body;
+      console.log(newClass)
+      const result = await classesCollection.insertOne(newClass)
+      res.send(result);
+    })
 
 
     // Send a ping to confirm a successful connection
