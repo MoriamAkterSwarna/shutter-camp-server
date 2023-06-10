@@ -4,6 +4,7 @@ const jwt = require('jsonwebtoken');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
+const stripe = require('stripe')(process.env.PAYMENT_KEY)
 const port = process.env.PORT || 5000;
 
 
@@ -51,7 +52,7 @@ async function run() {
     const usersCollection = client.db("shutterCamp").collection("users");
     const classesCollection= client.db("shutterCamp").collection("classes");
     const selectedClassesCollection= client.db("shutterCamp").collection("selectedClasses");
-
+    const paymentCollection = client.db("shutterCamp").collection("payments");
 
   
 
@@ -205,12 +206,7 @@ async function run() {
       res.send(result);
       
     });
-    // app.get('/selected/:id', async(req, res) => {
-    //   const id = req.params.id;
-    //   console.log(id);
-    //   // const selectedId =await selectedClassesCollection.filter(sId => sId._id === id)
-    //   // res.send(selectedId)
-    // })
+    
     app.post('/selected', async (req, res) => {
       const item = req.body;
       const result = await selectedClassesCollection.insertOne(item);
@@ -233,7 +229,83 @@ async function run() {
       }
     })
 
+    //payment apis
+    app.get('/payments', async (req, res) => {
 
+      const result = await paymentCollection.find().toArray();
+      res.send(result);
+    })
+    app.post('/create-payment-intent', async (req, res) => {
+      const { price } = req.body;
+      console.log(req.body)
+      const amount = parseInt(price * 100);
+      console.log(amount)
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+      
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
+
+
+
+    app.post("/payments",verifyJWT,  async (req, res) => { 
+      const payment = req.body; 
+      // console.log(payment)
+      const insertResult = await paymentCollection.insertOne(payment); 
+      res.send(insertResult)
+    })
+ 
+    //   // const deleteQuery = { 
+    //   //   _id: new ObjectId(payment.selectedClassId), 
+    //   // }; 
+    //   // const deleteResult = await selectedClassesCollection.deleteOne(deleteQuery); 
+ 
+    //   // const updateQuery = { 
+    //   //   _id: new ObjectId(payment.classId), 
+    //   // }; 
+    //   // const updateResult = await classesCollection.updateOne(updateQuery, { 
+    //   //   $inc: { enrolled: 1 }, 
+    //   // }); 
+ 
+    //   // const updateSeatsQuery = { 
+    //   //   _id: new ObjectId(payment.classId), 
+    //   // }; 
+    //   // const updateSeatsResult = await classesCollection.updateOne( 
+    //   //   updateSeatsQuery, 
+    //   //   { 
+    //   //     $inc: { available_seats: -1 }, 
+    //   //   } 
+    //   // ); 
+ 
+    //   // const classId = payment.classId; 
+    //   // const query = { _id: new ObjectId(classId) }; 
+ 
+    //   // const classData = await classesCollection.findOne(query); 
+    //   // const instructorEmail = classData.email; 
+ 
+    //   // const updateInstructorQuery = { email: instructorEmail }; 
+ 
+    //   // // if instructor has no students field, create one 
+    //   // const updateInstructorResult = await usersCollection.updateOne( 
+    //   //   updateInstructorQuery, 
+    //   //   { 
+    //   //     $inc: { students: 1 }, 
+    //   //   } 
+    //   // ); 
+ 
+    //   res.send({ 
+    //     insertResult, 
+    //     // deleteResult, 
+    //     // updateResult, 
+    //     // updateSeatsResult, 
+    //     // updateInstructorResult, 
+    //   }); 
+    // });
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log("Pinged your deployment. You successfully connected to MongoDB!");
