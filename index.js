@@ -191,7 +191,7 @@ async function run() {
 
     // selected Class apis
   
-    app.get('/selected',verifyJWT,  async (req, res) => {
+    app.get('/selected', async (req, res) => {
       const email = req.query?.email;
 
       console.log('student',email)
@@ -204,10 +204,32 @@ async function run() {
       res.send(result);
       
     });
+    // app.get('/selected/:id', async(req, res) => {
+    //   const id = req.params.id;
+    //   console.log(id);
+    //   // const selectedId =await selectedClassesCollection.filter(sId => sId._id === id)
+    //   // res.send(selectedId)
+    // })
     app.post('/selected', async (req, res) => {
       const item = req.body;
       const result = await selectedClassesCollection.insertOne(item);
       res.send(result);
+    })
+    app.delete('/selected/:id', async (req, res) => {
+      try {
+        const id = req.params.id;
+        console.log('ID:', id);
+        if (!id) {
+          throw new Error('Invalid ID');
+        }
+    
+        const query = { _id: new ObjectId(id) };
+        const result = await selectedClassesCollection.deleteOne(query);
+        res.send(result);
+      } catch (error) {
+        console.error(error);
+        res.status(400).send({ error: 'Invalid request' });
+      }
     })
 
 
