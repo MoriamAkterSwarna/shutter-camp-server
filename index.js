@@ -192,6 +192,11 @@ async function run() {
       const result = await classesCollection.find().sort({enrolled: -1}).limit(6).toArray();
       res.send(result);
     });
+    //popular instructor
+    app.get("/popularinstructor", async (req, res) => {
+      const result = await usersCollection.find({role: 'instructor'}).sort({students: -1}).limit(6).toArray();
+      res.send(result);
+    });
 
     // selected Class apis
 
