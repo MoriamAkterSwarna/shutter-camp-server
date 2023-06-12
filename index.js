@@ -148,20 +148,7 @@ async function run() {
       const result = await usersCollection.updateOne(filter, updateDoc);
       res.send(result);
     });
-    //make student
-    app.patch("/users/student/:id", async (req, res) => {
-      const id = req.params.id;
-      console.log(id);
-      const filter = { _id: new ObjectId(id) };
-      const updateDoc = {
-        $set: {
-          role: "student",
-        },
-      };
-      const result = await usersCollection.updateOne(filter, updateDoc);
-      res.send(result);
-    });
-
+    
     //classes related api
     app.get("/classes", async (req, res) => {
       const result = await classesCollection.find().toArray();
@@ -181,7 +168,20 @@ async function run() {
       const filter = { _id: new ObjectId(id) };
       const updateDoc = {
         $set: {
-          status: "approve",
+          status: "approved",
+        },
+      };
+      const result = await classesCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+    //make deny
+    app.put("/classes/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = {
+        $set: {
+          status: "denied", feedback:req.body.feedback
         },
       };
       const result = await classesCollection.updateOne(filter, updateDoc);
@@ -189,12 +189,20 @@ async function run() {
     });
     //popular classes
     app.get("/popularclasses", async (req, res) => {
-      const result = await classesCollection.find().sort({enrolled: -1}).limit(6).toArray();
+      const result = await classesCollection
+        .find()
+        .sort({ enrolled: -1 })
+        .limit(6)
+        .toArray();
       res.send(result);
     });
     //popular instructor
     app.get("/popularinstructor", async (req, res) => {
-      const result = await usersCollection.find({role: 'instructor'}).sort({students: -1}).limit(6).toArray();
+      const result = await usersCollection
+        .find({ role: "instructor" })
+        .sort({ students: -1 })
+        .limit(6)
+        .toArray();
       res.send(result);
     });
 
@@ -264,12 +272,9 @@ async function run() {
       // console.log(payment)
       const insertResult = await paymentCollection.insertOne(payment);
       // res.send(insertResult)
-
       const deleteQuery = {
         _id: new ObjectId(payment.pay?._id),
       };
-
-
       const deleteResult = await selectedClassesCollection.deleteOne(
         deleteQuery
       );
@@ -310,11 +315,10 @@ async function run() {
         deleteResult,
         updateResult,
         updateSeatsResult,
-        updateInstructorResult
+        updateInstructorResult,
       });
     });
 
-    
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });
     console.log(
