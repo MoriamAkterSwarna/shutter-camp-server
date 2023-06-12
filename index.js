@@ -23,6 +23,7 @@ const client = new MongoClient(uri, {
 
 const verifyJWT = (req, res, next) => {
   const authorization = req.headers.authorization;
+  console.log(req.headers)
   console.log("autho", authorization);
   if (!authorization) {
     return res
@@ -45,7 +46,7 @@ const verifyJWT = (req, res, next) => {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+    // await client.connect();
 
     const usersCollection = client.db("shutterCamp").collection("users");
     const classesCollection = client.db("shutterCamp").collection("classes");
@@ -54,7 +55,7 @@ async function run() {
       .collection("selectedClasses");
     const paymentCollection = client.db("shutterCamp").collection("payments");
 
-    //JWT
+    // //JWT
     app.post("/jwt", (req, res) => {
       const user = req.body;
       const jsonToken = jwt.sign(user, process.env.SECRET_TOKEN, {
@@ -63,7 +64,7 @@ async function run() {
       res.send({ jsonToken });
     });
 
-    //verify Admin
+    // //verify Admin
     const verifyAdmin = async (req, res, next) => {
       const email = req.decoded.email;
       const query = { email: email };
@@ -95,26 +96,26 @@ async function run() {
       res.send(result);
     });
 
-    app.get("/users/admin/:email", verifyJWT, async (req, res) => {
+    app.get("/users/admin/:email",  async (req, res) => {
       const email = req.params.email;
       console.log("admin", email);
 
-      if (req.decoded.email !== email) {
-        console.log("decoded email", req.decoded.email);
-        return res.send({ admin: false });
-      }
+      // if (req.decoded.email !== email) {
+      //   console.log("decoded email", req.decoded.email);
+      //   return res.send({ admin: false });
+      // }
 
       const query = { email: email };
       const user = await usersCollection.findOne(query);
       const result = { admin: user?.role === "admin" };
       res.send(result);
     });
-    app.get("/users/instructor/:email", verifyJWT, async (req, res) => {
+    app.get("/users/instructor/:email",  async (req, res) => {
       const email = req.params.email;
       console.log("instructor", email);
-      if (req.decoded.email !== email) {
-        return res.send({ instructor: false });
-      }
+      // if (req.decoded.email !== email) {
+      //   return res.send({ instructor: false });
+      // }
       const query = { email: email };
       const user = await usersCollection.findOne(query);
       const result = { instructor: user?.role === "instructor" };
@@ -267,7 +268,7 @@ async function run() {
       });
     });
 
-    app.post("/payments", verifyJWT, async (req, res) => {
+    app.post("/payments",  async (req, res) => {
       const payment = req.body;
       // console.log(payment)
       const insertResult = await paymentCollection.insertOne(payment);
